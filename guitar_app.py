@@ -94,22 +94,24 @@ if "current_user" not in st.session_state: st.session_state["current_user"] = No
 if not st.session_state["logged_in"]:
     st.set_page_config(page_title="弾き語りノート Cloud", page_icon="🎸")
     st.title("🎸 弾き語りノート Cloud")
-    st.info("※セキュリティ上の注意：他サイトと同じパスワードは絶対に使用しないでください。")
+    
+    # ▼▼▼ 追加した免責事項エリア ▼▼▼
     st.markdown("""
-<div style="background-color: #f9f9f9; padding: 10px; border-radius: 5px; font-size: 0.8em; color: #555; margin-bottom: 20px;">
-    <strong>【免責事項・利用規約】</strong><br>
-    本アプリは個人の演奏活動支援を目的としたツールです。<br>
-    ユーザーが入力・保存するデータ（歌詞、コード等）の権利と責任はユーザー自身に帰属します。<br>
-    著作権法で認められた「私的使用」の範囲を超えて、他人の著作物を無断で登録・公開することは禁止されています。<br>
-    本アプリの利用によるトラブルや損害について、開発者は一切の責任を負いません。
-                
-    【個人情報の扱いについて】
-
-    登録されたパスワードは暗号化して保存されるため、管理者（開発者）を含め第三者が閲覧することはできません。
-
-    ユーザー名（ID）は管理者が確認できるため、個人を特定できる名前の使用は自己判断で行ってください。
-</div>
-""", unsafe_allow_html=True)
+    <div style="background-color: #f0f2f6; padding: 15px; border-radius: 10px; font-size: 0.85em; color: #333; margin-bottom: 25px; border-left: 5px solid #ff4b4b;">
+        <strong>【免責事項・利用規約】</strong><br>
+        本アプリは個人の演奏活動支援を目的としたツールです。<br>
+        ユーザーが入力・保存するデータ（歌詞、コード等）の権利と責任はユーザー自身に帰属します。<br>
+        著作権法で認められた「私的使用」の範囲を超えて、他人の著作物を無断で登録・公開することは禁止されています。<br>
+        本アプリの利用によるトラブルや損害について、開発者は一切の責任を負いません。<br><br>
+        <strong>【個人情報の扱いについて】</strong>
+        <ul>
+            <li>登録されたパスワードは暗号化して保存されるため、管理者（開発者）を含め第三者が閲覧することはできません。</li>
+            <li>ユーザー名（ID）は管理者が確認できるため、個人を特定できる名前の使用は自己判断で行ってください。</li>
+        </ul>
+        <small>※セキュリティ上の注意：他サイトと同じパスワードは絶対に使用しないでください。</small>
+    </div>
+    """, unsafe_allow_html=True)
+    # ▲▲▲ ここまで ▲▲▲
     
     tab1, tab2 = st.tabs(["🔑 ログイン", "🆕 新規登録"])
     
@@ -379,49 +381,110 @@ def generate_song_html(text, all_chords, all_strokes):
     return "".join(html_parts)
 
 def view_song_with_player(html_content, title):
-    player_html = f"""
-    <!DOCTYPE html><html><head><style>
-    body {{ margin: 0; padding: 0; font-family: sans-serif; background: #fff; }}
-    #song-container {{ height: 70vh; overflow-y: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff; margin-bottom: 10px; scroll-behavior: smooth; }}
-    #controls {{ display: flex; gap: 10px; padding: 10px; background: #f0f2f6; border-radius: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }}
-    .btn {{ padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; }}
-    .btn-scroll {{ background-color: #333; }}
-    .btn-metro {{ background-color: #ff4b4b; }}
-    .setting-group {{ display: flex; align-items: center; gap: 5px; font-size: 12px; color: #555; background:white; padding:5px; border-radius:5px; }}
-    </style></head><body>
-    <div id="controls">
-        <div class="setting-group"><button id="btn-scroll" class="btn btn-scroll">📜 Scroll</button><label>Spd:</label><input type="range" id="scroll-speed" min="1" max="50" value="10" style="width:80px;"></div>
-        <div class="setting-group"><button id="btn-metro" class="btn btn-metro">⏱️ <span id="bpm-val">120</span></button><input type="range" id="metro-bpm" min="40" max="240" value="120" style="width:80px;"><label>Vol:</label><input type="range" id="metro-vol" min="0" max="100" value="50" style="width:50px;"></div>
-    </div>
-    <div id="song-container"><h2 style="margin-top:0;">{title}</h2>{html_content}<div style="height: 300px;"></div></div>
-    <script>
-    const sc = document.getElementById('song-container'); const bs = document.getElementById('btn-scroll'); const sp = document.getElementById('scroll-speed');
-    let isS=false; let sI;
-    
-    // ↓ ここを修正しました ({{ と }})
-    bs.addEventListener('click',()=>{{
-        isS=!isS; if(isS){{bs.innerText="⏹️ Stop";bs.style.backgroundColor="#ff4b4b";startS();}}else{{bs.innerText="📜 Scroll";bs.style.backgroundColor="#333";clearInterval(sI);}}
-    }});
-    
-    // ↓ ここも修正しました
-    sp.addEventListener('input',()=>{{if(isS)startS();}});
-    
-    function startS(){{clearInterval(sI);const s=51-parseInt(sp.value);sI=setInterval(()=>{{sc.scrollTop+=1;}},s*2);}}
-    
-    const ac=new(window.AudioContext||window.webkitAudioContext)(); let isP=false; let bpm=120; let nT=0.0; let tID; let vol=0.5;
-    const bm=document.getElementById('btn-metro'); const bsld=document.getElementById('metro-bpm'); const bdis=document.getElementById('bpm-val'); const vsld=document.getElementById('metro-vol');
-    
-    function play(t){{const o=ac.createOscillator();const g=ac.createGain();o.connect(g);g.connect(ac.destination);o.type='square';o.frequency.value=1000;g.gain.setValueAtTime(vol*0.3,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.1);o.start(t);o.stop(t+0.1);}}
-    function sch(){{while(nT<ac.currentTime+0.1){{play(nT);nT+=60.0/bpm;}}tID=window.setTimeout(sch,25);}}
-    
-    // ↓ ここも修正しました
-    bm.addEventListener('click',()=>{{
-        if(ac.state==='suspended')ac.resume(); isP=!isP; if(isP){{bm.style.backgroundColor="#333";nT=ac.currentTime;sch();}}else{{bm.style.backgroundColor="#ff4b4b";window.clearTimeout(tID);}}
-    }});
-    
-    bsld.addEventListener('input',function(){{bpm=this.value;bdis.innerText=bpm;}}); vsld.addEventListener('input',function(){{vol=this.value/100;}});
-    </script></body></html>
+    player_html = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body { margin: 0; padding: 0; font-family: sans-serif; background: #fff; }
+            #song-container { height: 70vh; overflow-y: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff; margin-bottom: 10px; scroll-behavior: smooth; }
+            #controls { display: flex; gap: 10px; padding: 10px; background: #f0f2f6; border-radius: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+            .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; }
+            .btn-scroll { background-color: #333; }
+            .btn-metro { background-color: #ff4b4b; }
+            .setting-group { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #555; background:white; padding:5px; border-radius:5px; }
+        </style>
+    </head>
+    <body>
+        <div id="controls">
+            <div class="setting-group">
+                <button id="btn-scroll" class="btn btn-scroll">📜 Scroll Start</button>
+                <label>Speed:</label> <input type="range" id="scroll-speed" min="1" max="50" value="10" style="width:80px;">
+            </div>
+            <div class="setting-group">
+                <button id="btn-metro" class="btn btn-metro">⏱️ BPM: <span id="bpm-val">120</span></button>
+                <input type="range" id="metro-bpm" min="40" max="240" value="120" style="width:80px;">
+                <label>Vol:</label> <input type="range" id="metro-vol" min="0" max="100" value="50" style="width:50px;">
+            </div>
+        </div>
+
+        <div id="song-container">
+            <h2 style="margin-top:0;">{{TITLE_PLACEHOLDER}}</h2>
+            {{CONTENT_PLACEHOLDER}}
+            <div style="height: 300px;"></div>
+        </div>
+
+        <script>
+            const songContainer = document.getElementById('song-container');
+            const btnScroll = document.getElementById('btn-scroll');
+            const speedInput = document.getElementById('scroll-speed');
+            let isScrolling = false;
+            let scrollInterval;
+            
+            btnScroll.addEventListener('click', () => {
+                isScrolling = !isScrolling;
+                if (isScrolling) {
+                    btnScroll.innerText = "⏹️ Stop";
+                    btnScroll.style.backgroundColor = "#ff4b4b";
+                    startScroll();
+                } else {
+                    btnScroll.innerText = "📜 Scroll Start";
+                    btnScroll.style.backgroundColor = "#333";
+                    clearInterval(scrollInterval);
+                }
+            });
+
+            speedInput.addEventListener('input', () => { if(isScrolling) startScroll(); });
+
+            function startScroll() {
+                clearInterval(scrollInterval);
+                const speed = 51 - parseInt(speedInput.value);
+                scrollInterval = setInterval(() => { songContainer.scrollTop += 1; }, speed * 2);
+            }
+
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            let isPlaying = false; let bpm = 120; let nextNoteTime = 0.0; let timerID; let volume = 0.5;
+            const btnMetro = document.getElementById('btn-metro');
+            const bpmSlider = document.getElementById('metro-bpm');
+            const bpmDisplay = document.getElementById('bpm-val');
+            const volSlider = document.getElementById('metro-vol');
+
+            function playSound(time) {
+                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.type = 'square'; osc.frequency.value = 1000;
+                gain.gain.setValueAtTime(volume * 0.3, time);
+                gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+                osc.start(time); osc.stop(time + 0.1);
+            }
+
+            function scheduler() {
+                while (nextNoteTime < audioCtx.currentTime + 0.1) {
+                    playSound(nextNoteTime); nextNoteTime += 60.0 / bpm;
+                }
+                timerID = window.setTimeout(scheduler, 25);
+            }
+
+            btnMetro.addEventListener('click', () => {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                isPlaying = !isPlaying;
+                if (isPlaying) {
+                    btnMetro.style.backgroundColor = "#333"; nextNoteTime = audioCtx.currentTime; scheduler();
+                } else {
+                    btnMetro.style.backgroundColor = "#ff4b4b"; window.clearTimeout(timerID);
+                }
+            });
+
+            bpmSlider.addEventListener('input', function() { bpm = this.value; bpmDisplay.innerText = bpm; });
+            volSlider.addEventListener('input', function() { volume = this.value / 100; });
+        </script>
+    </body>
+    </html>
     """
+    
+    player_html = player_html.replace("{{TITLE_PLACEHOLDER}}", title)
+    player_html = player_html.replace("{{CONTENT_PLACEHOLDER}}", html_content)
+    
     components.html(player_html, height=700, scrolling=False)
 
 # --- その他のアクション ---
