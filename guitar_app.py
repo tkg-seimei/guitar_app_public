@@ -557,6 +557,7 @@ with st.sidebar:
     mode = st.radio("モード", ["📝 歌詞編集", "📂 曲管理・閲覧", "➕ コード登録", "🌊 ストローク登録", "🎼 パターン登録", "🔧 登録データ管理"], key="app_mode")
     st.divider()
 
+
     if mode == "📝 歌詞編集":
         st.subheader("保存")
         c1, c2 = st.columns([2.5, 1])
@@ -565,6 +566,9 @@ with st.sidebar:
         st.multiselect("タグ", get_all_tags(), key="song_tags_input")
         st.text_input("新規タグ", key="new_tag_text")
         st.button("この内容を保存", on_click=save_song, type="primary")
+
+    st.markdown("---")
+    st.caption("© 2026 tkg-seimei")
 
 if mode == "📝 歌詞編集":
     col_edit, col_view = st.columns([1, 1.5])
