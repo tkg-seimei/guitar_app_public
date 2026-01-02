@@ -95,6 +95,15 @@ if not st.session_state["logged_in"]:
     st.set_page_config(page_title="弾き語りノート Cloud", page_icon="🎸")
     st.title("🎸 弾き語りノート Cloud")
     st.info("※セキュリティ上の注意：他サイトと同じパスワードは絶対に使用しないでください。")
+    st.markdown("""
+<div style="background-color: #f9f9f9; padding: 10px; border-radius: 5px; font-size: 0.8em; color: #555; margin-bottom: 20px;">
+    <strong>【免責事項・利用規約】</strong><br>
+    本アプリは個人の演奏活動支援を目的としたツールです。<br>
+    ユーザーが入力・保存するデータ（歌詞、コード等）の権利と責任はユーザー自身に帰属します。<br>
+    著作権法で認められた「私的使用」の範囲を超えて、他人の著作物を無断で登録・公開することは禁止されています。<br>
+    本アプリの利用によるトラブルや損害について、開発者は一切の責任を負いません。
+</div>
+""", unsafe_allow_html=True)
     
     tab1, tab2 = st.tabs(["🔑 ログイン", "🆕 新規登録"])
     
