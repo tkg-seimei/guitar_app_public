@@ -833,34 +833,104 @@ elif mode == "🌊 ストローク登録":
 
 elif mode == "🎼 パターン登録":
     st.subheader("🎼 パターン作成工房")
-    st.caption("よく使うコード進行やストローク進行を登録することで、入力作業を効率化できます。")
-    c_pat, c_list = st.columns([1, 1])
-    with c_pat:
+    st.caption("ボタンをぽちぽち押して、直感的にパターンを作れます。")
+
+    # --- 1. 一時保存用の変数を初期化 ---
+    if "temp_pat_chords" not in st.session_state: st.session_state["temp_pat_chords"] = []
+    if "temp_pat_strums" not in st.session_state: st.session_state["temp_pat_strums"] = []
+
+    # --- 2. 画面レイアウト ---
+    c_builder, c_list = st.columns([1.5, 1])
+
+    with c_builder:
         with st.container(border=True):
-            st.markdown("##### 新しいパターンを作成")
+            st.markdown("##### 🎹 パターンを組み立てる")
             pn = st.text_input("パターン名", placeholder="例：カノン進行、サビ、Aメロ")
-            pc = st.text_input("コードの順番 (カンマ区切り)", placeholder="C, G, Am, Em, F, C, F, G")
-            ps = st.text_input("ストロークの順番 (カンマ区切り・任意)", placeholder="8beat, 8beat, 16beat...")
-            if st.button("パターンを保存", type="primary"):
-                if pn and pc:
-                    cl = [c.strip() for c in pc.split(',') if c.strip()]
-                    sl = [s.strip() for s in ps.split(',') if s.strip()]
-                    st.session_state["custom_patterns"][pn] = {"chords": cl, "strums": sl}
+
+            st.divider()
+
+            # ▼▼▼ コード入力エリア ▼▼▼
+            st.markdown(f"**コード順:** {' → '.join(st.session_state['temp_pat_chords']) if st.session_state['temp_pat_chords'] else '(未選択)'}")
+            
+            # 操作ボタン（戻る・クリア）
+            bc1, bc2 = st.columns(2)
+            with bc1:
+                if st.button("↩️ 1つ戻る (コード)", key="undo_c", use_container_width=True):
+                    if st.session_state["temp_pat_chords"]: st.session_state["temp_pat_chords"].pop()
+                    st.rerun()
+            with bc2:
+                if st.button("🗑️ コード全消去", key="clear_c", use_container_width=True):
+                    st.session_state["temp_pat_chords"] = []
+                    st.rerun()
+
+            # コード選択ボタン一覧
+            with st.expander("🎸 コードを選択 (クリックで追加)", expanded=True):
+                chord_opts = list(ALL_CHORDS.keys())
+                # 6列でボタンを並べる
+                cols = st.columns(6)
+                for i, chord in enumerate(chord_opts):
+                    if cols[i % 6].button(chord, key=f"btn_add_{chord}"):
+                        st.session_state["temp_pat_chords"].append(chord)
+                        st.rerun()
+
+            st.divider()
+
+            # ▼▼▼ ストローク入力エリア ▼▼▼
+            st.markdown(f"**ストローク順 (任意):** {' → '.join(st.session_state['temp_pat_strums']) if st.session_state['temp_pat_strums'] else '(指定なし)'}")
+            
+            # 操作ボタン（戻る・クリア）
+            bs1, bs2 = st.columns(2)
+            with bs1:
+                if st.button("↩️ 1つ戻る (ストローク)", key="undo_s", use_container_width=True):
+                    if st.session_state["temp_pat_strums"]: st.session_state["temp_pat_strums"].pop()
+                    st.rerun()
+            with bs2:
+                if st.button("🗑️ ストローク全消去", key="clear_s", use_container_width=True):
+                    st.session_state["temp_pat_strums"] = []
+                    st.rerun()
+
+            # ストローク選択ボタン一覧
+            with st.expander("🌊 ストロークを選択 (クリックで追加)"):
+                stroke_opts = list(ALL_STROKES.keys())
+                # 4列でボタンを並べる
+                cols_s = st.columns(4)
+                for i, stroke in enumerate(stroke_opts):
+                    if cols_s[i % 4].button(stroke, key=f"btn_add_s_{stroke}"):
+                        st.session_state["temp_pat_strums"].append(stroke)
+                        st.rerun()
+
+            st.divider()
+
+            # ▼▼▼ 保存ボタン ▼▼▼
+            if st.button("💾 このパターンを保存", type="primary", use_container_width=True):
+                if pn and st.session_state["temp_pat_chords"]:
+                    # リストをそのまま保存
+                    st.session_state["custom_patterns"][pn] = {
+                        "chords": st.session_state["temp_pat_chords"],
+                        "strums": st.session_state["temp_pat_strums"]
+                    }
                     save_data_unified()
-                    st.success(f"パターン「{pn}」を保存しました。")
-                else: st.error("名前とコードは必須項目です。")
+                    st.success(f"パターン「{pn}」を保存しました！")
+                    # 保存したら入力をクリア
+                    st.session_state["temp_pat_chords"] = []
+                    st.session_state["temp_pat_strums"] = []
+                    st.rerun()
+                else:
+                    st.error("パターン名と、少なくとも1つのコードを選択してください。")
+
     with c_list:
         st.markdown("##### 📜 登録済みパターン")
         if st.session_state["custom_patterns"]:
             for name, dat in list(st.session_state["custom_patterns"].items()):
                 with st.expander(f"🎼 {name}"):
-                    st.write(f"**コード:** {', '.join(dat['chords'])}")
-                    if dat['strums']: st.write(f"**ストローク:** {', '.join(dat['strums'])}")
+                    st.write(f"**コード:** {' → '.join(dat['chords'])}")
+                    if dat['strums']: st.write(f"**ストローク:** {' → '.join(dat['strums'])}")
                     if st.button("削除", key=f"del_pat_{name}"):
                         del st.session_state["custom_patterns"][name]
                         save_data_unified()
                         st.rerun()
-        else: st.info("登録されたパターンはありません。")
+        else:
+            st.info("登録されたパターンはありません。")
 
 elif mode == "🔧 登録データ管理":
     st.subheader("登録データ管理"); t1, t2 = st.tabs(["🎸 コード", "🌊 ストローク"])
